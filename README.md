@@ -1,7 +1,53 @@
-# Planar VTOL: Feedforward, Requirements, MiL / Custom Host SiL
+# eVTOL Flight Control: Model-Based Design, MiL/SiL and CI
 
-MATLAB R2026b, Simulink, Requirements Toolbox, Simulink Coder, generated C,
-Git and GitHub Actions. Embedded Coder and UAV Toolbox are not used.
+An in-progress flight-control project, starting with the nonlinear planar VTOL
+from Exercise 8.2. The current implementation is a **2D, three-degree-of-freedom
+plant with six states**, not a full 6-DOF multicopter. The long-term goal is a
+multicopter simulation and verification workflow with actuator modeling,
+requirements traceability, generated C, automated testing and PX4 SITL.
+
+## Implemented
+
+| Area | Current implementation |
+| --- | --- |
+| Simulink plant | `eVTOL.slx`: nonlinear planar dynamics and a six-state Integrator for position, velocity, attitude and angular rate. |
+| Reference generation | Separate point-to-point and circular trajectory blocks, with derivatives through fourth order. Point-to-point motion is from `[1,1]` to `[3,2]` over 10 time units. |
+| Controller | Flatness-based open-loop feedforward for thrust `u1` and angular acceleration `u2`, with matched initial states and a singularity guard. |
+| Visualization | Actual and desired paths, state plots and aircraft motion visualization. |
+| Requirements | One editable position-error requirement in Requirements Toolbox, linked to a MATLAB unit test with verification status. |
+| Generated C | Controller-only C generation using Simulink Coder; the plant is not generated. |
+| MiL/SiL comparison | Custom host SiL runs the compiled controller C against the same Simulink plant and compares `u1`, `u2` and all six states with MiL. |
+| Regression | One `regression` entry point, 14 checks, PASS/FAIL output, comparison plots and machine-readable reports. All 14 checks passed locally. |
+| GitHub Actions | Workflow configured for pushes, pull requests and manual runs. Full hosted execution is pending licensing configuration; it is not yet a passing hosted regression. |
+
+**Tools used:** MATLAB R2026b, Simulink, Requirements Toolbox, Simulink Coder,
+C, a host C compiler, Git and GitHub Actions workflow configuration.
+**Planned tools:** UAV Toolbox, Embedded Coder and PX4 SITL/Gazebo.
+These planned tools have not yet been used in the implemented workflow.
+
+## Next Steps and Roadmap
+
+1. **Dynamic flatness-based tracking:** integrate the two thrust-extension
+   states (`u1` and its derivative), feedback gains `16, 32, 24, 8`, and
+   initial-disturbance tests. Symbolic dynamic-extension derivations already
+   exist, but this feedback controller is not yet integrated into the model.
+2. **Broader requirements and tests:** add measurable convergence, disturbance
+   rejection and actuator-limit criteria, extending requirement-to-test links.
+3. **Complete hosted CI:** configure eligible MATLAB licensing or a licensed
+   self-hosted runner, then confirm code generation and regression on GitHub.
+4. **6-DOF multicopter model:** add 3D translational and rotational dynamics,
+   rotor thrust/torque, motor dynamics, saturation and control allocation.
+   The controller must also be adapted to the 3D plant; the planar controller
+   is not a drop-in multicopter controller.
+5. **Embedded Coder verification:** when licensed, add production-oriented
+   controller C generation and MathWorks' built-in SIL back-to-back testing.
+6. **UAV Toolbox and PX4 SITL/Gazebo:** introduce UAV scenarios and compatible
+   controller interfaces, followed by hover, trajectory and wind-gust tests.
+
+The chosen controller direction is flatness-based control. The cascaded PID/LQR
+controller and EKF from the original project vision are **not implemented and
+are outside the immediate scope**. Current tests use an ideal, dimensionless
+plant with exact state knowledge and no motor dynamics, wind or sensor noise.
 
 ## Run
 
@@ -75,19 +121,24 @@ comparison plots. JUnit XML can be consumed by CI reporting tools.
 
 ## GitHub Actions
 
-One workflow runs `regression` on every push, pull request and manual dispatch.
-It regenerates controller C, runs all checks and uploads reports/source artifacts.
+One workflow is configured to run `regression` on every push, pull request and
+manual dispatch. After licensing is available, it regenerates controller C,
+runs all checks and uploads reports/source artifacts.
 
-This repository is private, and code generation uses a transformation product.
-Hosted MATLAB therefore needs a MathWorks batch licensing token. Add it as the
+This repository is **public**. Public visibility enables automatic licensing
+for supported non-transformation products, but does not by itself provide
+licensing for the code-generation products used by the full workflow. See the
+[MATLAB Actions licensing guidance](https://github.com/matlab-actions/setup-matlab#licensing).
+
+The current workflow requires a MathWorks batch licensing token. Add it as the
 repository Actions secret `MLM_LICENSE_TOKEN`; do not put it in a file or commit.
 Without it, CI deliberately fails at the licensing check rather than claiming
-that tests passed. Consult your license administrator or MathWorks about an
-eligible batch token or a licensed self-hosted runner. The
-[batch-token pilot](https://www.mathworks.com/support/batch-tokens.html)
-is currently not accepting new requests.
-The token must cover MATLAB, Simulink, Simulink Coder and Requirements Toolbox
-and their dependencies. Availability depends on the license entitlement.
+that tests passed. No successful hosted regression is claimed yet.
+Consult your license administrator or MathWorks about
+[batch licensing availability](https://www.mathworks.com/support/batch-tokens.html)
+or a licensed self-hosted runner. Licensing must cover MATLAB, Simulink,
+Simulink Coder, Requirements Toolbox and their required dependencies, including
+MATLAB Coder. Availability depends on the license entitlement.
 
 ## Reference Material
 
