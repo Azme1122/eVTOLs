@@ -1,0 +1,15 @@
+name: VTOL regression
+on: [push, pull_request, workflow_dispatch]
+env:
+  MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          products: MATLAB_Coder
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: regression
