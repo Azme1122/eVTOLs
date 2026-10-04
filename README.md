@@ -142,7 +142,4 @@ MATLAB Coder. Availability depends on the license entitlement.
 
 ## Reference Material
 
-`derivations/` and `simulink_sources/` keep the symbolic work and readable block
-sources. The local `NCS2SIM/` folder is the user's original crane reference and
-is not part of the published VTOL regression. Historical work was archived
-outside the project during cleanup, not required to run regression.
+
