@@ -1,15 +1,44 @@
-name: VTOL regression
-on: [push, pull_request, workflow_dispatch]
-env:
-  MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+name: VTOL MiL and custom host SiL regression
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   regression:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check MATLAB licensing configuration
+        shell: bash
+        run: |
+          if [ -z "$MLM_LICENSE_TOKEN" ]; then
+            echo "::error::Add the MLM_LICENSE_TOKEN repository secret. Private MATLAB projects and Simulink Coder generation require batch licensing."
+            exit 1
+          fi
       - uses: matlab-actions/setup-matlab@v3
         with:
-          products: MATLAB_Coder
-      - uses: matlab-actions/run-command@v3
+          release: R2026b
+          products: Simulink Simulink_Coder MATLAB_Coder Requirements_Toolbox
+      - name: Generate controller C and run all regression checks
+        uses: matlab-actions/run-command@v3
         with:
           command: regression
+      - name: Upload reports and generated controller C
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vtol-regression-results
+          if-no-files-found: ignore
+          path: |
+            results/regression.*
+            results/requirements_results.*
+            results/*_mil_sil.*
+            generated/controller/

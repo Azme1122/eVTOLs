@@ -3,3 +3,9 @@ results/
 *.mex*
 *.asv
 codegen/
+slprj/
+*.slxc
+.DS_Store
+NCS2SIM/
+derivations/archive/
+derivations/symbolic_results.mat
